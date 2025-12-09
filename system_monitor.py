@@ -100,13 +100,13 @@ class IterationMetrics:
         self.iterations: List[Dict[str, Any]] = []
         
     def add_iteration(self, iteration_num: int, execution_time: float, 
-                     peak_ram: float, avg_cpu: float, response_length: int):
+                     peak_ram: float, peak_cpu: float, response_length: int):
         """Add metrics for a completed iteration"""
         self.iterations.append({
             'iteration': iteration_num,
             'execution_time': execution_time,
             'peak_ram_gb': peak_ram,
-            'avg_cpu_percent': avg_cpu,
+            'peak_cpu_percent': peak_cpu,
             'response_length': response_length,
             'timestamp': datetime.now()
         })
@@ -118,7 +118,7 @@ class IterationMetrics:
             
         exec_times = [i['execution_time'] for i in self.iterations]
         ram_peaks = [i['peak_ram_gb'] for i in self.iterations]
-        cpu_avgs = [i['avg_cpu_percent'] for i in self.iterations]
+        cpu_peaks = [i['peak_cpu_percent'] for i in self.iterations]
         
         import statistics
         
@@ -130,6 +130,6 @@ class IterationMetrics:
             'stddev_execution_time': statistics.stdev(exec_times) if len(exec_times) > 1 else 0,
             'avg_ram_peak': statistics.mean(ram_peaks),
             'max_ram_peak': max(ram_peaks),
-            'avg_cpu': statistics.mean(cpu_avgs),
-            'max_cpu': max(cpu_avgs)
+            'avg_cpu': statistics.mean(cpu_peaks),
+            'max_cpu': max(cpu_peaks)
         }

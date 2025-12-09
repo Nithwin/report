@@ -35,16 +35,33 @@ class ConcurrentLoadTester:
         """Execute a single request and return results"""
         import psutil
         
+        # Track peak CPU during execution
+        cpu_samples = []
+        monitoring = {'active': True}
+        
+        def monitor_cpu():
+            """Background thread to continuously monitor CPU"""
+            while monitoring['active']:
+                cpu_samples.append(psutil.cpu_percent(interval=0.1))
+                time.sleep(0.1)
+        
         # Get baseline metrics
         baseline_ram = psutil.virtual_memory().used / (1024**3)
-        baseline_cpu = psutil.cpu_percent(interval=0.1)
+        
+        # Start CPU monitoring thread
+        cpu_thread = threading.Thread(target=monitor_cpu, daemon=True)
+        cpu_thread.start()
         
         # Execute model
         result = self.ollama.generate(self.model, self.prompt)
         
+        # Stop CPU monitoring
+        monitoring['active'] = False
+        cpu_thread.join(timeout=1)
+        
         # Get peak metrics
         peak_ram = psutil.virtual_memory().used / (1024**3)
-        avg_cpu = psutil.cpu_percent(interval=0.1)
+        peak_cpu = max(cpu_samples) if cpu_samples else 0.0
         
         return {
             'request_num': request_num,
@@ -52,7 +69,7 @@ class ConcurrentLoadTester:
             'execution_time': result['execution_time'],
             'response_length': len(result['response']) if result['success'] else 0,
             'peak_ram': peak_ram,
-            'avg_cpu': avg_cpu,
+            'peak_cpu': peak_cpu,
             'error': result.get('error')
         }
     
@@ -130,7 +147,7 @@ class ConcurrentLoadTester:
                                 iteration_num=result['request_num'],
                                 execution_time=result['execution_time'],
                                 peak_ram=result['peak_ram'],
-                                avg_cpu=result['avg_cpu'],
+                                peak_cpu=result['peak_cpu'],
                                 response_length=result['response_length']
                             )
                             
@@ -139,7 +156,7 @@ class ConcurrentLoadTester:
                                   f"{result['execution_time']:.2f}s | "
                                   f"{result['response_length']} chars | "
                                   f"RAM: {result['peak_ram']:.2f}GB | "
-                                  f"CPU: {result['avg_cpu']:.1f}%")
+                                  f"CPU: {result['peak_cpu']:.1f}%")
                         else:
                             self.failed_count += 1
                             print(f"[{self.completed_count + self.failed_count}/{self.total_requests}] "
@@ -151,7 +168,7 @@ class ConcurrentLoadTester:
                                 iteration_num=result['request_num'],
                                 execution_time=result['execution_time'],
                                 peak_ram=result['peak_ram'],
-                                avg_cpu=result['avg_cpu'],
+                                peak_cpu=result['peak_cpu'],
                                 response_length=0
                             )
                             
