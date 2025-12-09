@@ -168,13 +168,13 @@ class ReportGenerator:
         # Iteration Details
         story.append(Paragraph("Iteration Details", heading_style))
         
-        iter_data = [['Iteration', 'Time (s)', 'Peak RAM (GB)', 'Avg CPU (%)', 'Response Length']]
+        iter_data = [['Iteration', 'Time (s)', 'Peak RAM (GB)', 'Peak CPU (%)', 'Response Length']]
         for it in iteration_metrics:
             iter_data.append([
                 str(it['iteration']),
                 f"{it['execution_time']:.2f}",
                 f"{it['peak_ram_gb']:.2f}",
-                f"{it['avg_cpu_percent']:.1f}",
+                f"{it['peak_cpu_percent']:.1f}",
                 str(it['response_length'])
             ])
         
